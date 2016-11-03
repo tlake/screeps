@@ -18,8 +18,8 @@ var roleUpgrader = {
             }
         }
         else {
-            if (creep.harvest(creep.memory.assignedSource) == ERR_NOT_IN_RANGE) {
-                creep.moveTo(creep.memory.assignedSource);
+            if (creep.harvest(Game.getObjectById(creep.memory.assignedSource)) == ERR_NOT_IN_RANGE) {
+                creep.moveTo(Game.getObjectById(creep.memory.assignedSource));
             }
         }
     }

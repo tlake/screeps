@@ -2,72 +2,66 @@ var roleHarvester = require('role.harvester');
 var roleUpgrader = require('role.upgrader');
 var roleBuilder = require('role.builder');
 
+// MAIN EVENT LOOP
 module.exports.loop = function () {
-
-    var tower = Game.getObjectById('TOWER_ID');
-    if(tower) {
-        var closestDamagedStructure = tower.pos.findClosestByRange(FIND_STRUCTURES, {
-            filter: (structure) => structure.hits < structure.hitsMax
-        });
-        if(closestDamagedStructure) {
-            tower.repair(closestDamagedStructure);
-        }
-
-        var closestHostile = tower.pos.findClosestByRange(FIND_HOSTILE_CREEPS);
-        if(closestHostile) {
-            tower.attack(closestHostile);
-        }
+  var s0 = Game.spawns["Spawn0"];
+  s0.memory.sources = s0.room.find(FIND_SOURCES);
+  s0.memory.sourceIds = [];
+  _.each(s0.memory.sources, function(source) {
+    if (!s0.memory.sourceIds[source.id]) {
+      s0.memory.sourceIds.push(source.id)
     }
+  });
 
-   var spawn = Game.spawns["Spawn0"];
-   var roomSources = spawn.room.find(FIND_SOURCES);
-
-   if(!spawn.memory["sources"]) {
-       spawn.memory["sources"] = {}
-   };
-
-   var spawnSources = spawn.memory["sources"];
-
-   for(var name in Memory.creeps) {
-       if(!Game.creeps[name]) {
-           delete Memory.creeps[name];
-           console.log('Clearing non-existing creep memory:', name);
-           for(var source in spawnSources) {
-               if(name in source) {
-                   source = _.without(source, name)
-               }
-           }
-       }
-   };
-
-   for(var source in roomSources) {
-       if(!(source in spawn.memory["sources"])) {
-           spawn.memory["sources"][source] = []
-       }
-   };
-
-   var assignCreepToSource = function(creep) {
-       leastPopulatedSource = spawnSources.reduce(function(a, b, i, arr) {
-            var retval = a;
-            a.length <= b.length
-                ? retval = a
-                : retval = b
-            return retval
-       });
-       creep.memory["assignedSource"] = leastPopulatedSource;
-       spawnSources[leastPopulatedSource].push(creep);
-   };
-
-    for(var name in Game.creeps) {
-        var creep = Game.creeps[name];
-        if(creep.memory.role == 'harvester') {
-            roleHarvester.run(creep);
-        }
-        if(creep.memory.role == 'upgrader') {
-            roleUpgrader.run(creep);
-        }
-        if(creep.memory.role == 'builder') {
-            roleBuilder.run(creep);
-        }
+  // Clean up memory
+  for (var name in Memory.creeps) {
+    if (!Game.creeps[name]) {
+      delete Memory.creeps[name];
+      console.log('Cleared non-existing creep memory:', name)
     }
-}
+  };
+
+  // Make a new creep if there are none
+  _.each(Game.spawns, function(spawn) {
+    if (Object.keys(Game.creeps).length < 1) {
+      spawn.createCreep(
+        [WORK, CARRY, MOVE],
+        '',
+        {
+          'role': 'upgrader',
+          'spawn': spawn._name
+        }
+      )
+    }
+  });
+
+  function assignCreepToSource(creep) {
+    var leastPopulatedSource = s0.memory.sourceIds.reduce(function(a, b, i, arr) {
+      var retval = a;
+      a.length <= b.length
+        ? retval = a
+        : retval = b
+      return retval
+    });
+
+    creep.memory["assignedSource"] = leastPopulatedSource;
+    // spawnSourcesList[leastPopulatedSource].push(creep)
+  };
+
+  // Make creeps do shit
+  for (var name in Game.creeps) {
+    var creep = Game.creeps[name];
+    assignCreepToSource(creep);
+    if (creep.memory.role == 'harvester') {
+      roleHarvester.run(creep)
+    };
+
+    if (creep.memory.role == 'upgrader') {
+      roleUpgrader.run(creep)
+    };
+
+    if (creep.memory.role == 'builder') {
+      roleBuilder.run(creep)
+    }
+  }
+};

@@ -4,8 +4,8 @@ var roleHarvester = {
     run: function(creep) {
         if(creep.carry.energy < creep.carryCapacity) {
             creep.say("harvesting");
-           if (creep.harvest(creep.memory.assignedSource) == ERR_NOT_IN_RANGE) {
-               creep.moveTo(creep.memory.assignedSource);
+           if (creep.harvest(Game.getObjectById(creep.memory.assignedSource)) == ERR_NOT_IN_RANGE) {
+               creep.moveTo(Game.getObjectById(creep.memory.assignedSource));
            }
         }
         else {
